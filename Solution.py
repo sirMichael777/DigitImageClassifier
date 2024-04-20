@@ -47,3 +47,31 @@ criterion = nn.CrossEntropyLoss()  # Cross-entropy loss for classification
 optimizer = optim.Adam(model.parameters(), lr=0.003)  # Adam optimizer with learning rate 0.003
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)  # Learning rate scheduler
 
+# Training loop
+def train_model():
+    epochs = 10  # Number of epochs for training
+    for e in range(epochs):
+        running_loss = 0
+        for images, labels in train_loader:
+            optimizer.zero_grad()  # Clear gradients
+            output = model(images)  # Forward pass
+            loss = criterion(output, labels)  # Calculate loss
+            loss.backward()  # Backpropagation
+            optimizer.step()  # Update weights
+            running_loss += loss.item()  # Accumulate loss
+        scheduler.step()  # Adjust learning rate
+        print(f"Epoch {e+1} - Training loss: {running_loss/len(train_loader)}")
+
+# Function to predict digit from an image file
+def predict(image_path):
+    path = Path(image_path)
+    if path.is_file():  # Check if provided path is a file
+        img = Image.open(image_path)  # Open image file
+        img = transform(img).unsqueeze(0)  # Preprocess image
+        with torch.no_grad():  # Disable gradient calculation
+            logps = model(img)  # Get log probabilities
+        ps = torch.exp(logps)  # Get probabilities
+        probab = list(ps.numpy()[0])  # Convert tensor to list
+        print("Predicted Digit =", probab.index(max(probab)))  # Print predicted digit
+    else:
+        print(f"The provided path '{image_path}' is not a file. Please provide a valid image file path.")
